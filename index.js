@@ -32,11 +32,12 @@ const listenMessage = () =>{
         const{from, to, body} = msg;
         console.log(from, to, body);
         let emisor = new String(from);
+        const search = body.slice(3);
         if(emisor.search("-1594581190@g.us")!= -1 || emisor.search("-1586135781@g.us"))
         {
                 if(body.search('-help')!=-1)
                 {
-                    sendMessage(from, 'Hola, a continuación se muestra el uso del bot\n -x [Nombre Pelicula][Dia] // Para buscar horarios en el Xmadrid\n -t [Nombre Pelicula][Dia] // Para buscar horarios en el TresAguas\n -k [Nombre Pelicula][Dia] // Para buscar horarios en el Kinepolis');
+                    sendMessage(from, 'Hola, a continuación se muestra el uso del bot\n -x [Nombre Pelicula][Dia] // Para buscar horarios en el Xmadrid\n -t [Nombre Pelicula][Dia] // Para buscar horarios en el TresAguas\n -k [Nombre Pelicula][Dia] // Para buscar horarios en el Kinepolis\n -y [nombre del video] // para buscar un video');
                 }else if(body.search("-x")!=-1)
                 {
                     sendMessage(from, 'Buscando información Xmadrid...');
@@ -49,12 +50,38 @@ const listenMessage = () =>{
                 }else if(body.search("-k")!=-1){
                     sendMessage(from, 'Buscando información Kinepolis...');
                     sendMessage(from, 'https://kinepolis.es/?main-section=presales');
+                }else if(body.search("-y")!=-1){
+                    sendMessage(from,'Buscando video...');
+                    buscarYT(search,from);
                 }
         }
         return ;
     })
 }
+const buscarYT = async(str,from)=>{
+    const browser = await puppeteer.launch();
+    const page =  await browser.newPage();
 
+    await page.goto('https://www.youtube.com/results?search_query='+str);
+    /*await page.waitForSelector('ytd-button-renderer.ytd-consent-bump-v2-lightbox:nth-child(2) > a:nth-child(1) > tp-yt-paper-button:nth-child(1)', {visible: true} );
+    await page.click('ytd-button-renderer.ytd-consent-bump-v2-lightbox:nth-child(2) > a:nth-child(1) > tp-yt-paper-button:nth-child(1)');
+    await page.waitForSelector('#search-input',{visible: true});
+    await page.click('#search-input');
+    await page.waitForSelector('input.ytd-searchbox',{visible: true}); 
+    await page.type('input.ytd-searchbox',str);
+    await page.waitForSelector('#search-icon-legacy',{visible: true});
+    await page.click('#search-icon-legacy');*/
+    await page.waitForSelector('ytd-video-renderer.ytd-item-section-renderer:nth-child(1) > div:nth-child(1)');
+    const enlace = await page.evaluate(() =>{
+        const element = document.querySelector('ytd-video-renderer.ytd-item-section-renderer:nth-child(1) > div:nth-child(1) ytd-thumbnail a');
+        const link = element.href;
+        return link;
+    });
+    console.log(enlace);
+    sendMessage(from,enlace);
+    await browser.close();
+    return enlace;
+}
 const sendMessage = (to, message) => {
 
     client.sendMessage(to, message)
@@ -62,7 +89,7 @@ const sendMessage = (to, message) => {
 
 //Consultar Web
 const searchBrowser = async(url) => {
-    const browser = await puppeteer.launch({headless: false});
+    const browser = await puppeteer.launch();
     const page = await browser.newPage();
     await page.setViewport({width: 1920, height: 1080});
     await page.goto(url);
