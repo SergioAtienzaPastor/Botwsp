@@ -6,14 +6,19 @@ const { send } = require('process');
 
 const SESSION_FILE_PATH = './session.json';
 let client;
-let sessionData;
+let sessionCfg;
 
 const withSession = () =>{
+    client = new Client();
+
+    client.on('qr', qr => {
+        qrcode.generate(qr, {small: true});
+    });
     console.log('Iniciando session...');
-    sessionData = require(SESSION_FILE_PATH);
+    /*sessionData = require(SESSION_FILE_PATH);
     client = new Client({ 
         session:sessionData
-    })
+    })*/
 
     client.on('ready',()=>{
        console.log('Cliente is ready!')
@@ -33,7 +38,12 @@ const listenMessage = () =>{
         console.log(from, to, body);
         let emisor = new String(from);
         const search = body.slice(3);
-        if(emisor.search("-1594581190@g.us")!= -1 || emisor.search("-1586135781@g.us"))
+        console.log(msg.type);
+        if(msg.type=='ptt')
+        {
+            console.log('Audio recibido');
+        }
+        if(0==0)//emisor.search("-1594581190@g.us")!= -1 || emisor.search("-1586135781@g.us"))
         {
                 if(body.search('-help')!=-1)
                 {
@@ -103,17 +113,19 @@ const withOutSession = () =>{
     client.on('qr', qr => {
         qrcode.generate(qr, {small: true});
     });
-
-    client.on('authenticated', (session) =>{
-        //Guardamos credenciales de session
-        sessionData = session;
-        fs.writeFile(SESSION_FILE_PATH, JSON.stringify(session), function (err){
-            if(err){
-                console.log(err);
+    console.log('holaaa');
+    client.on('AUTHENTICATED', (session) => {
+        console.log('AUTHENTICATED', session);
+        sessionCfg=session;
+        fs.writeFile(SESSION_FILE_PATH, JSON.stringify(session), function (err) {
+            if (err) {
+                console.error(err);
             }
+            withSession();
         });
     });
+    console.log('estoy aqui');
     client.initialize();
 }
 
-(fs.existsSync(SESSION_FILE_PATH)) ? withSession() : withOutSession();
+(fs.existsSync(SESSION_FILE_PATH)) ? withSession() : withSession();
